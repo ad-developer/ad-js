@@ -19,8 +19,25 @@
 
 
 
-const util = util : {};
+const util = {
 
-util.el(name){
-  return document.getElementById(name);
-}
+  /**
+   * Wrapper around document getElementById
+   *
+   * @param  {string} name Element Id
+   * @return {object}      Dom element object.
+   */
+  el(name) {
+    return document.getElementById(name);
+  },
+
+  /**
+   * elCreate - description
+   *
+   * @param  {string} tagName Tag name.
+   * @return {object}    Newly created dom element object.
+   */
+  elCreate(tagName) {
+    return document.createElement(tagName)
+  }
+};
