@@ -18,6 +18,8 @@
  * ======================================================================== */
 
 
+'use strict';
+
 
 const util = {
 
@@ -39,5 +41,14 @@ const util = {
    */
   elCreate(tagName) {
     return document.createElement(tagName)
+  },
+
+  /**
+   * Returns true if the specified value is a string.
+   * @param {?} val Variable to test.
+   * @return {boolean} Whether variable is a string.
+   */
+  isString = function(val) {
+    return typeof val == 'string';
   }
 };

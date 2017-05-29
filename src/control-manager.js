@@ -17,11 +17,11 @@
  * limitations under the License.
  * ======================================================================== */
 
+
 'use strict';
 
 
 let controlManager = controlManager || {};
-
 
 /**
  * Key/Value (map) object to keep controls.
@@ -65,7 +65,6 @@ controlManager.gpad_ = 'ad';
  */
 controlManager.gid_ = 1;
 
-
 /**
  *  Generates next clobal id.
  * @return {string}  description
@@ -73,7 +72,6 @@ controlManager.gid_ = 1;
 controlManager.guid = function() {
   return this.gpad_ + this.gid_++;
 };
-
 
 /**
  * Method to registers controls.
@@ -85,7 +83,6 @@ controlManager.registerControl = function(name, control){
   this.controls_[name] = control;
 };
 
-
 /**
  * Method to register datasources.
  *
@@ -96,7 +93,6 @@ controlManager.registerDataSource = function(name, dataSource){
   this.dataSources_[name] = dataSource;
 };
 
-
 /**
  * Method to register modules.
  *
@@ -106,7 +102,6 @@ controlManager.registerDataSource = function(name, dataSource){
 controlManager.registerModule = function(name, module){
   this.modules_[name] = module;
 };
-
 
 /**
  * Getter to get a datasource instance object.
@@ -121,7 +116,6 @@ controlManager.getDataSource = function(name){
   }
 };
 
-
 /**
  * Getter to get a module instatnce object.
  *
@@ -132,14 +126,13 @@ controlManager.getModule = function(name){
   return this.modules_[name];
 };
 
-
 /**
  * Method to build container path. Used as a key to save/retrieve container
  * object from containers_ map.
  *
  * @param  {object} container Container object.
  * @param  {object} parent    Parent Object
- * @param  {number} index     Position withing parent collection of controls.
+ * @param  {number} index     Position within parent collection of controls.
  * @return {string}           New calculated path.
  */
 controlManager.getContainerPath = function(container, parent, index){
@@ -151,14 +144,13 @@ controlManager.getContainerPath = function(container, parent, index){
   return p;
 };
 
-
 /**
  * Method to add a container to containers_ map;
  *
  * @param  {string} id        Container id.
  * @param  {object} container Container object.
  * @param  {object} parent    Parent object.
- * @param  {number} index     Position withing parent collection of controls.
+ * @param  {number} index     Position within parent collection of controls.
  */
 controlManager.addContainer = function(id, container, parent, index){
   let path = '';
@@ -169,7 +161,6 @@ controlManager.addContainer = function(id, container, parent, index){
   this.containers_[id] = container;
 },
 
-
 /**
  * Getter to get container object from containers_ map;
  *
@@ -179,7 +170,6 @@ controlManager.addContainer = function(id, container, parent, index){
 controlManager.getContainer = function(id){
   return this.containers_[id];
 };
-
 
 /**
  * Getter to get control class from controls_ map;
@@ -194,7 +184,6 @@ controlManager.getControl = function(name){
   }
   return c;
 };
-
 
 /**
  * resolveTag - description
@@ -228,15 +217,14 @@ controlManager.resolveTag = function(name){
   };
 };
 
-
 /**
- * Method to resolve (translate) dom structure of the dom node into Json object.
+ * Method to resolve (convert) dom structure into  the Json object.
  *
  * @param  {object} domObj Dom object.
  * @return {object}       Json object.
  */
 controlManager.resolveJson = function(domObj){
-  /* new implementation */
+
   let obj = {},
       arrObj = [],
       attr = domObj.attributes,
@@ -280,13 +268,12 @@ controlManager.resolveJson = function(domObj){
   return obj;
 };
 
-
 /**
- * controlManager - description
+ * Locating object insed the json grath based on the submitted path.
  *
- * @param  {type} obj  description
- * @param  {type} path description
- * @return {type}      description
+ * @param  {object} obj  Json object
+ * @param  {string} path Path
+ * @return {string}      Extracted object
  */
 controlManager.locateObj = function(obj, path){
   if(path === ''){
@@ -306,4 +293,156 @@ controlManager.locateObj = function(obj, path){
    return obj;
 };
 
+/**
+ * getParentAndIndex - Extract parent and index elememt from the path.
+ *
+ * @param  {string} path Path
+ * @return {object}      Object with the two fields p - as a parent and
+ *                       i - index ... {i,p} ...
+ */
+controlManager.getParentAndIndex = function(path){
+  var p = path.substr(0, path.length - 3),
+      i = path.substr(path.length - 2, 1)
+  return {
+    // path
+    p: p,
+    // index
+    i: parseInt(i)
+  };
+};
+
+/**
+ * purge - Method removes the node traces from the (1) containers_ list,
+ * (2) from global Json path and (3) from parent controls list array.
+ *
+ * @param  {string} id Id
+ * @return {object}    Object of parent and index within it.
+ */
+controlManager.purge = function(id){
+  // Remove this container and all subcontainers from containers_ list.
+  // Remove this from json path.
+  // Remove this control from parent controls.
+  let con = this.containers_[id],
+      parent,
+      path,
+      el,
+      i = 0;
+  if(!con){
+    return;
+  }
+  parent = con.getParent();
+  path = con.path;
+  // Remove from container...
+  delete this.containers_[id];
+  // ... and all subcontainers.
+  for (el in this.containers_) {
+    if (this.containers_.hasOwnProperty(el)) {
+      if(this.containers_[el].path.startsWith(path)){
+        delete this.containers_[el];
+      }
+    }
+  }
+  // If not a parent then it's a root container and the entire json
+  // object will be deleted
+  if(!parent){
+    el = con.getJson();
+    // Set the Json object to the empty object.
+    el = {};
+    return;
+  }
+  path = this.getParentAndIndex(path);
+
+  con = this.locateObj(parent.getJson(), path.p);
+
+  // Remove Json branch from the parent.
+  con.splice(path.i, 1);
+
+  path = parent.getControls();
+  i = 0;
+  for (;i < path.length;i++) {
+    con = path[i];
+    if(con.getId() === id){
+      i = i - 1;
+      path.splice(i, 1);
+      break;
+    }
+  }
+  return {
+    p: parent,
+    i: i
+  };
+};
+
+/**
+ * apply - description
+ *
+ * @param  {string|object} meta  Meta can be either container id
+ * or Json object representing the content of the container. If container id
+ * is provided then the HTML markup will be used to build the content of the
+ * container.
+ * @param  {object=} model Represent a model of the container
+ * controls.
+ * @param  {string=} state State of the control(s) it can be
+ * form, edit, or view.
+ */
+controlManager.apply: function(meta, model, state){
+  let id,
+      con,
+      tag,
+      controlObj,
+
+      // json format
+      // { contId: "id", controls: [{tag: "name", attribute: "value", attribute: "value"}, ..., ]}
+      json,
+      content,
+      po,
+      i;
+
+  // See if meta is a container id
+  if(isString(meta)){
+    id = meta;
+
+  // Otherwise it is a Json meta data (see requirements for Json meta data)
+  // to build a container's content.
+  } else {
+    id = meta.id;
+    json = meta;
+  }
+
+  con = util.el(id);
+
+  // Hide container untill it's rendered in full.
+  // It is implemented through display css property.
+  // TODO: This can be done as a setting... to apply more robust mehanism using
+  // css transformation/animation properties and class
+
+  con.style.display = 'none';
+  tag = con.tagName.toLowerCase();
+
+  // Make instance of the corresponding
+  // container control
+  controlObj = this.getControl(tag);
+  controlObj = new controlObj();
+
+  // Get a 'parent and the position within it
+  // in case of replacement
+  po = this.purge(id)
+  tag = null;
+  if(po){
+    tag = po.p;
+    i = po.i
+  }
+  // Build top level container control.
+  content = controlObj.build(id, json, model, state, tag, i);
+
+  content.show();
+
+  // Inject the content into container
+  // and show the container.
+  con.innerHTML = '';
+  con.appendChild(content);
+  con.style.display = 'block';
+};
+
+// Register global object.
 window.ad = window.ad || controlManager;
