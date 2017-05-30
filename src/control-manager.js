@@ -374,7 +374,7 @@ controlManager.purge = function(id){
 };
 
 /**
- * apply - description
+ * apply - The main method of the framework. It applys
  *
  * @param  {string|object} meta  Meta can be either container id
  * or Json object representing the content of the container. If container id
